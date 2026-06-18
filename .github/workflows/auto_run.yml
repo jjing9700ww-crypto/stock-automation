@@ -1,0 +1,41 @@
+name: Daily Stock Data Collection
+
+# 언제 실행할지 설정 (매일 정해진 시간)
+on:
+  schedule:
+    # UTC 기준 시간 (한국 시간 오후 4시는 UTC 오전 7시입니다)
+    - cron: '0 7 * * *'
+  workflow_dispatch: # 원할 때 수동으로도 실행할 수 있게 하는 옵션
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. 저장소의 코드를 가상 컴퓨터로 가져오기
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # 2. 가상 컴퓨터에 파이썬 설치하기
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-data-reader: '3.10'
+
+    # 3. 필요한 라이브러리(pandas, finance-datareader, openpyxl) 설치하기
+    - name: Install dependencies
+      run: |
+        pip install pandas finance-datareader openpyxl
+
+    # 4. 우리가 만든 파이썬 코드 실행하기
+    - name: Run stock collection script
+      run: python collect_stock.py
+
+    # 5. 새로 생성된 엑셀 파일을 내 깃허브 저장소에 자동으로 업데이트(Commit & Push)하기
+    - name: Commit and Push changes
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add .
+        git diff-index --quiet HEAD || git commit -m "Auto-update stock data [skip ci]"
+        git push

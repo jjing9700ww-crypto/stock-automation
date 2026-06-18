@@ -1,0 +1,40 @@
+name: Daily Stock Data Collection
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 최신 v4 버전으로 변경하여 Node.js 경고 해결
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # 최신 v5 버전으로 변경 및 오타 수정
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10' # python-data-reader에서 올바르게 수정함
+
+    - name: Install dependencies
+      run: |
+        pip install pandas finance-datareader openpyxl
+
+    - name: Run stock collection script
+      env:
+        APP_KEY: ${{ secrets.APP_KEY }}
+        APP_SECRET: ${{ secrets.APP_SECRET }}
+        CANO: ${{ secrets.CANO }}
+      run: python collect_stock.py
+
+    - name: Commit and Push changes
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add .
+        git diff-index --quiet HEAD || git commit -m "Auto-update stock data [skip ci]"
+        git push
